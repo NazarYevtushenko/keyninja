@@ -142,16 +142,27 @@ const TG = {
 ══════════════════════════════════════════════ */
 
 /* Finger index per key: 1=L.pinky 2=L.ring 3=L.middle 4=L.index
-   0=thumbs  5=R.index 6=R.middle 7=R.ring 8=R.pinky */
+   0=thumbs  5=R.index 6=R.middle 7=R.ring 8=R.pinky
+   Note: both Shift keys share 'Shift' eventKey → colored fc1 (left pinky shade).
+   Backspace/Enter/right-side keys → fc8 (right pinky, sage green). */
 const VK_FINGER = {
+  /* Left pinky — red */
   '`':1,'1':1,'Tab':1,'q':1,'CapsLock':1,'a':1,'Shift':1,'z':1,
+  /* Left ring — orange */
   '2':2,'w':2,'s':2,'x':2,
+  /* Left middle — green */
   '3':3,'e':3,'d':3,'c':3,
+  /* Left index — blue (2 columns) */
   '4':4,'5':4,'r':4,'t':4,'f':4,'g':4,'v':4,'b':4,
+  /* Thumbs — lavender */
   ' ':0,'Alt':0,
+  /* Right index — light blue (2 columns) */
   '6':5,'7':5,'y':5,'u':5,'h':5,'j':5,'n':5,'m':5,
+  /* Right middle — teal */
   '8':6,'i':6,'k':6,',':6,
+  /* Right ring — teal-green */
   '9':7,'o':7,'l':7,'.':7,
+  /* Right pinky — sage green */
   '0':8,'-':8,'=':8,'Backspace':8,'p':8,'[':8,']':8,'\\':8,
   ';':8,"'":8,'Enter':8,'/':8,
 };
