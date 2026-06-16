@@ -140,6 +140,22 @@ const TG = {
 /* ══════════════════════════════════════════════
    VK — Virtual Keyboard
 ══════════════════════════════════════════════ */
+
+/* Finger index per key: 1=L.pinky 2=L.ring 3=L.middle 4=L.index
+   0=thumbs  5=R.index 6=R.middle 7=R.ring 8=R.pinky */
+const VK_FINGER = {
+  '`':1,'1':1,'Tab':1,'q':1,'CapsLock':1,'a':1,'Shift':1,'z':1,
+  '2':2,'w':2,'s':2,'x':2,
+  '3':3,'e':3,'d':3,'c':3,
+  '4':4,'5':4,'r':4,'t':4,'f':4,'g':4,'v':4,'b':4,
+  ' ':0,'Alt':0,
+  '6':5,'7':5,'y':5,'u':5,'h':5,'j':5,'n':5,'m':5,
+  '8':6,'i':6,'k':6,',':6,
+  '9':7,'o':7,'l':7,'.':7,
+  '0':8,'-':8,'=':8,'Backspace':8,'p':8,'[':8,']':8,'\\':8,
+  ';':8,"'":8,'Enter':8,'/':8,
+};
+
 const VK = {
   el: null,
 
@@ -156,7 +172,9 @@ const VK = {
       rowEl.className = 'kb-row';
       row.forEach(([code, label, cls = '']) => {
         const k = document.createElement('div');
-        k.className = 'key' + (cls ? ' ' + cls : '');
+        const fi = VK_FINGER[code];
+        const fc = fi !== undefined ? ` fc${fi}` : '';
+        k.className = 'key' + (cls ? ' ' + cls : '') + fc;
         k.textContent = label;
         k.dataset.kc = code;
         rowEl.appendChild(k);

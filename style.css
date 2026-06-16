@@ -276,6 +276,31 @@ kbd {
   border-radius: 2px;
 }
 
+/* ── Finger legend ── */
+.finger-legend {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.fl-item {
+  font-size: .66rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+  color: var(--text);
+}
+/* reuse the same finger colors as keyboard */
+.fl-item.fc1,.fl-item.fc8 { background:rgba(220,55,55,var(--fop)); border-color:rgba(220,55,55,var(--fbop)); }
+.fl-item.fc2 { background:rgba(220,128,28,var(--fop)); border-color:rgba(220,128,28,var(--fbop)); }
+.fl-item.fc3 { background:rgba(195,178,15,var(--fop)); border-color:rgba(195,178,15,var(--fbop)); }
+.fl-item.fc4 { background:rgba(35,162,75,var(--fop));  border-color:rgba(35,162,75,var(--fbop));  }
+.fl-item.fc0 { background:rgba(55,138,218,var(--fop)); border-color:rgba(55,138,218,var(--fbop)); }
+.fl-item.fc5 { background:rgba(18,188,182,var(--fop)); border-color:rgba(18,188,182,var(--fbop)); }
+.fl-item.fc6 { background:rgba(138,75,198,var(--fop)); border-color:rgba(138,75,198,var(--fbop)); }
+.fl-item.fc7 { background:rgba(218,55,138,var(--fop)); border-color:rgba(218,55,138,var(--fbop)); }
+
 .trainer-btns {
   display: flex;
   gap: 10px;
@@ -307,6 +332,27 @@ kbd {
 .key.w2 { min-width: 70px; }
 .key.w3 { min-width: 90px; }
 .key.sp { min-width: 250px; }
+
+/* ── Finger color zones (come BEFORE state rules so states override) ── */
+:root    { --fop: .16; --fbop: .42; }
+[data-theme="light"] { --fop: .24; --fbop: .60; }
+
+/* 1 & 8 = pinkies → red */
+.key.fc1,.key.fc8 { background:rgba(220,55,55,var(--fop)); border-color:rgba(220,55,55,var(--fbop)); }
+/* 2 = left ring → orange */
+.key.fc2 { background:rgba(220,128,28,var(--fop)); border-color:rgba(220,128,28,var(--fbop)); }
+/* 3 = left middle → yellow */
+.key.fc3 { background:rgba(195,178,15,var(--fop)); border-color:rgba(195,178,15,var(--fbop)); }
+/* 4 = left index → green */
+.key.fc4 { background:rgba(35,162,75,var(--fop)); border-color:rgba(35,162,75,var(--fbop)); }
+/* 0 = thumbs → blue */
+.key.fc0 { background:rgba(55,138,218,var(--fop)); border-color:rgba(55,138,218,var(--fbop)); }
+/* 5 = right index → teal */
+.key.fc5 { background:rgba(18,188,182,var(--fop)); border-color:rgba(18,188,182,var(--fbop)); }
+/* 6 = right middle → purple */
+.key.fc6 { background:rgba(138,75,198,var(--fop)); border-color:rgba(138,75,198,var(--fbop)); }
+/* 7 = right ring → pink */
+.key.fc7 { background:rgba(218,55,138,var(--fop)); border-color:rgba(218,55,138,var(--fbop)); }
 
 /* Next key to type */
 .key.next {
