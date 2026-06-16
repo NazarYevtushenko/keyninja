@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keyboard Ninja</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="logo">KEY<span>NINJA</span></div>
+  <div class="nav-right">
+    <button class="btn icon-btn" id="theme-btn" onclick="App.toggleTheme()" title="Сменить тему">🌙</button>
+    <button class="btn active" id="lang-btn" onclick="App.toggleLang()">EN</button>
+    <button class="btn" onclick="App.go('stats')">📊 Стат.</button>
+    <button class="btn" onclick="App.go('home')">⌂</button>
+  </div>
+</nav>
+
+<div id="app">
+
+  <!-- ══ HOME ══ -->
+  <div class="screen active" id="s-home">
+    <div class="home-title"><span class="g">KEY</span><span class="b">NINJA</span></div>
+    <p class="home-sub">Тренажёр с адаптивным алгоритмом прокачки слабых клавиш</p>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="App.go('trainer')">
+        <div class="ic">⌨️</div>
+        <div class="mc-title">Тренажёр</div>
+        <div class="mc-desc">Классический режим с адаптивными текстами</div>
+      </div>
+      <div class="mode-card" onclick="App.go('fw')">
+        <div class="ic">🌧️</div>
+        <div class="mc-title">Падающие слова</div>
+        <div class="mc-desc">Слова падают сверху — успей напечатать</div>
+      </div>
+      <div class="mode-card" onclick="App.go('rw')">
+        <div class="ic">🚀</div>
+        <div class="mc-title">Поднятие слов</div>
+        <div class="mc-desc">Слова всплывают снизу — останови их</div>
+      </div>
+      <div class="mode-card" onclick="App.go('sw')">
+        <div class="ic">💫</div>
+        <div class="mc-title">Рассыпанные слова</div>
+        <div class="mc-desc">Слова летают по экрану</div>
+      </div>
+      <div class="mode-card" onclick="App.go('fl')">
+        <div class="ic">🔤</div>
+        <div class="mc-title">Падающие буквы</div>
+        <div class="mc-desc">Прокачка отдельных клавиш</div>
+      </div>
+      <div class="mode-card" onclick="App.go('rl')">
+        <div class="ic">⬆️</div>
+        <div class="mc-title">Поднятие букв</div>
+        <div class="mc-desc">Буквы всплывают снизу</div>
+      </div>
+      <div class="mode-card" onclick="App.go('sl')">
+        <div class="ic">✨</div>
+        <div class="mc-title">Рассыпанные буквы</div>
+        <div class="mc-desc">Хаотичные буквы по экрану</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TRAINER ══ -->
+  <div class="screen" id="s-trainer">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+
+    <div class="stats-bar">
+      <div class="stat">Скорость: <span class="stat-v" id="t-wpm">0</span> <span class="stat-u">зн/мин</span></div>
+      <div class="stat">Точность: <span class="stat-v" id="t-acc">100</span><span class="stat-u">%</span></div>
+      <div class="stat">Серия: <span class="stat-v" id="t-streak">0</span></div>
+      <div class="stat" id="t-focus-row" style="display:none">
+        Фокус: <span class="stat-v focus-val" id="t-focus"></span>
+      </div>
+    </div>
+
+    <div id="text-display">
+      <div id="text-chars"></div>
+      <div id="error-badge"></div>
+    </div>
+    <div id="text-progress"><div id="text-progress-fill"></div></div>
+
+    <div id="kb-wrap"></div>
+
+    <div class="trainer-btns">
+      <button class="btn" onclick="Trainer.restart()">↺ Рестарт <kbd>Tab</kbd></button>
+      <button class="btn" onclick="Trainer.nextLine()">→ Новый текст</button>
+      <button class="btn" id="adp-btn" onclick="Trainer.toggleAdaptive()">🎯 Адаптив: ВКЛ</button>
+    </div>
+  </div>
+
+  <!-- ══ FALLING WORDS ══ -->
+  <div class="screen" id="s-fw">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="game-wrap">
+      <canvas class="game-canvas" id="c-fw"></canvas>
+      <div class="game-hud">
+        <div class="hud-stat"><div class="hl">СЧЁТ</div><div class="hv" id="fw-score">0</div></div>
+        <div class="hud-stat"><div class="hl">УРОВЕНЬ</div><div class="hv" id="fw-level">1</div></div>
+        <div class="hud-stat"><div class="hl">ЖИЗНИ</div><div class="hv" id="fw-lives">❤️❤️❤️</div></div>
+        <div class="hud-stat"><div class="hl">ЗН/МИН</div><div class="hv" id="fw-wpm">0</div></div>
+      </div>
+      <div class="ginput-wrap">
+        <input class="ginput" id="i-fw" placeholder="Печатай слово…" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RISING WORDS ══ -->
+  <div class="screen" id="s-rw">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="game-wrap">
+      <canvas class="game-canvas" id="c-rw"></canvas>
+      <div class="game-hud">
+        <div class="hud-stat"><div class="hl">СЧЁТ</div><div class="hv" id="rw-score">0</div></div>
+        <div class="hud-stat"><div class="hl">УРОВЕНЬ</div><div class="hv" id="rw-level">1</div></div>
+        <div class="hud-stat"><div class="hl">ЖИЗНИ</div><div class="hv" id="rw-lives">❤️❤️❤️</div></div>
+      </div>
+      <div class="ginput-wrap">
+        <input class="ginput" id="i-rw" placeholder="Печатай слово…" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCATTERED WORDS ══ -->
+  <div class="screen" id="s-sw">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="game-wrap">
+      <canvas class="game-canvas" id="c-sw"></canvas>
+      <div class="game-hud">
+        <div class="hud-stat"><div class="hl">СЧЁТ</div><div class="hv" id="sw-score">0</div></div>
+        <div class="hud-stat"><div class="hl">ОСТАЛОСЬ</div><div class="hv" id="sw-rem">0</div></div>
+        <div class="hud-stat"><div class="hl">ВРЕМЯ</div><div class="hv" id="sw-time">60</div></div>
+      </div>
+      <div class="ginput-wrap">
+        <input class="ginput" id="i-sw" placeholder="Печатай слово…" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FALLING LETTERS ══ -->
+  <div class="screen" id="s-fl">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="game-wrap">
+      <canvas class="game-canvas" id="c-fl"></canvas>
+      <div class="game-hud">
+        <div class="hud-stat"><div class="hl">СЧЁТ</div><div class="hv" id="fl-score">0</div></div>
+        <div class="hud-stat"><div class="hl">ЖИЗНИ</div><div class="hv" id="fl-lives">❤️❤️❤️❤️❤️</div></div>
+        <div class="hud-stat"><div class="hl">ЗН/МИН</div><div class="hv" id="fl-wpm">0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RISING LETTERS ══ -->
+  <div class="screen" id="s-rl">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="game-wrap">
+      <canvas class="game-canvas" id="c-rl"></canvas>
+      <div class="game-hud">
+        <div class="hud-stat"><div class="hl">СЧЁТ</div><div class="hv" id="rl-score">0</div></div>
+        <div class="hud-stat"><div class="hl">ЖИЗНИ</div><div class="hv" id="rl-lives">❤️❤️❤️❤️❤️</div></div>
+        <div class="hud-stat"><div class="hl">ЗН/МИН</div><div class="hv" id="rl-wpm">0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCATTERED LETTERS ══ -->
+  <div class="screen" id="s-sl">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="game-wrap">
+      <canvas class="game-canvas" id="c-sl"></canvas>
+      <div class="game-hud">
+        <div class="hud-stat"><div class="hl">СЧЁТ</div><div class="hv" id="sl-score">0</div></div>
+        <div class="hud-stat"><div class="hl">ВРЕМЯ</div><div class="hv" id="sl-time">60</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STATS ══ -->
+  <div class="screen" id="s-stats">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="screen-title">📊 Статистика</div>
+    <div class="stat-grid" id="stat-grid"></div>
+    <div class="weak-section">
+      <div class="weak-title">Проблемные клавиши (топ по % ошибок):</div>
+      <div class="weak-keys" id="weak-keys"></div>
+    </div>
+    <button class="btn btn-danger" onclick="SE.reset(); StatsScreen.render()">🗑 Сбросить статистику</button>
+  </div>
+
+</div><!-- #app -->
+
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/trainer.js"></script>
+<script src="js/games.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
