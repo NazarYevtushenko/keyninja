@@ -2,34 +2,46 @@
 
 /* ══════════════════════════════════════════════
    Trainer — Classic typing mode
-   Key improvements over v1:
-   - errors{} stores typed char per position
-   - _scroll() keeps cursor visible without scrollbar
-   - _showError() notification badge
-   - Progress bar
+   Improvements:
+   - errors{} maps position → typed char
+   - _scroll() keeps cursor visible
+   - _showError() badge with expected vs typed
    - Shake animation on wrong key
-   - Backspace correctly removes error mark
+   - Backspace clears error at position
+   - Task integration (daily + program day)
 ══════════════════════════════════════════════ */
 const Trainer = {
-  text:     '',
-  pos:      0,
-  errors:   {},   /* pos → char that was typed (wrong) */
-  streak:   0,
-  adaptive: true,
-  _interval: null,
-  _handler:  null,
-  _errTimer: null,
+  text:       '',
+  pos:        0,
+  errors:     {},   /* pos → char that was typed */
+  streak:     0,
+  adaptive:   true,
+  _totalChars: 0,   /* accumulated across lines for task tracking */
+  _taskCtx:   null,
+  _taskDone:  false,
+  _interval:  null,
+  _handler:   null,
+  _errTimer:  null,
 
   /* ── Lifecycle ── */
 
   init() {
     SE.startSess();
     VK.init('kb-wrap', App.lang);
-    this.adaptive = true;
+
+    this.adaptive    = true;
+    this._totalChars = 0;
+    this._taskDone   = false;
+    this._taskCtx    = App.programContext || null;
+    App.programContext = null; /* consume */
+
     document.getElementById('adp-btn').textContent = '🎯 Адаптив: ВКЛ';
+
     this._gen();
     this._render();
     this._startUI();
+    this._initTask();
+
     this._handler = e => this._key(e);
     document.addEventListener('keydown', this._handler);
   },
@@ -38,19 +50,26 @@ const Trainer = {
     document.removeEventListener('keydown', this._handler);
     clearInterval(this._interval);
     SE.endSess();
+    this._hideTask();
   },
 
   /* ── Text generation ── */
 
   _gen() {
-    const fk = this.adaptive ? SE.weakKeys(5).map(w => w.key) : [];
+    /* If a task/program day provides focus keys, use them */
+    let fk = [];
+    if (this._taskCtx && this._taskCtx.focusKeys && this._taskCtx.focusKeys.length) {
+      fk = this._taskCtx.focusKeys;
+    } else if (this.adaptive) {
+      fk = SE.weakKeys(5).map(w => w.key);
+    }
+
     this.text   = TG.text(App.lang, 270, fk);
     this.pos    = 0;
     this.errors = {};
-    this.streak = 0;
 
     const focusRow = document.getElementById('t-focus-row');
-    if (fk.length && this.adaptive) {
+    if (fk.length) {
       focusRow.style.display = 'flex';
       document.getElementById('t-focus').textContent = fk.slice(0, 5).join(', ');
     } else {
@@ -75,7 +94,6 @@ const Trainer = {
       if (i < this.pos) {
         if (this.errors[i] !== undefined) {
           cls += 'wrong';
-          /* store typed char as data attribute for potential CSS use */
           attr = ` data-typed="${this.errors[i].replace(/"/g, '&quot;')}"`;
         } else {
           cls += 'correct';
@@ -90,38 +108,32 @@ const Trainer = {
                  : ch === '<' ? '&lt;'
                  : ch === '>' ? '&gt;'
                  : ch;
-
       return `<span class="${cls}"${attr}>${safe}</span>`;
     }).join('');
 
     charsEl.innerHTML = html;
 
-    /* progress bar */
-    const pct = this.text.length ? (this.pos / this.text.length * 100) : 0;
+    const pct  = this.text.length ? (this.pos / this.text.length * 100) : 0;
     const fill = document.getElementById('text-progress-fill');
     if (fill) fill.style.width = pct + '%';
 
     this._scroll();
   },
 
-  /* Keep cursor in view by adjusting scrollTop of #text-display */
+  /* Keep cursor visible without showing scrollbar */
   _scroll() {
-    const display  = document.getElementById('text-display');
-    const cursor   = display && display.querySelector('.ch.cursor');
+    const display = document.getElementById('text-display');
+    const cursor  = display && display.querySelector('.ch.cursor');
     if (!display || !cursor) return;
 
-    const cursorTop    = cursor.offsetTop;
-    const cursorBottom = cursorTop + cursor.offsetHeight;
-    const viewTop      = display.scrollTop;
-    const viewBottom   = viewTop + display.clientHeight;
+    const top    = cursor.offsetTop;
+    const bottom = top + cursor.offsetHeight;
+    const vBot   = display.scrollTop + display.clientHeight;
 
-    if (cursorBottom > viewBottom - 4) {
-      /* scroll down so cursor is ~35% from top */
-      display.scrollTop = cursorTop - display.clientHeight * 0.35;
-    }
-    if (cursorTop < viewTop) {
-      display.scrollTop = cursorTop;
-    }
+    if (bottom > vBot - 4)
+      display.scrollTop = top - display.clientHeight * 0.35;
+    if (top < display.scrollTop)
+      display.scrollTop = top;
   },
 
   /* ── HUD update loop ── */
@@ -135,32 +147,105 @@ const Trainer = {
       if (w) w.textContent = SE.wpm();
       if (a) a.textContent = SE.acc();
       if (s) s.textContent = this.streak;
+      this._refreshTask();
     }, 400);
   },
 
-  /* ── Error notification badge ── */
+  /* ── Error badge ── */
 
   _showError(expected, typed) {
     const badge = document.getElementById('error-badge');
     if (!badge) return;
-    const exp  = expected === ' ' ? 'ПРОБЕЛ' : `"${expected}"`;
-    const got  = typed    === ' ' ? 'ПРОБЕЛ' : `"${typed}"`;
+    const exp = expected === ' ' ? 'ПРОБЕЛ' : `"${expected}"`;
+    const got = typed    === ' ' ? 'ПРОБЕЛ' : `"${typed}"`;
     badge.textContent = `✕ ожидалось ${exp}, введено ${got}`;
     badge.classList.add('show');
     clearTimeout(this._errTimer);
     this._errTimer = setTimeout(() => badge.classList.remove('show'), 1800);
   },
 
-  /* ── Shake animation ── */
+  /* ── Shake ── */
 
   _shake() {
-    const display = document.getElementById('text-display');
-    if (!display) return;
-    display.classList.remove('shake');
-    /* force reflow so animation restarts even on consecutive errors */
-    void display.offsetWidth;
-    display.classList.add('shake');
-    setTimeout(() => display.classList.remove('shake'), 250);
+    const el = document.getElementById('text-display');
+    if (!el) return;
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+    setTimeout(() => el.classList.remove('shake'), 250);
+  },
+
+  /* ── Task integration ── */
+
+  _initTask() {
+    const ctx = this._taskCtx;
+    const banner = document.getElementById('task-banner');
+    if (!banner) return;
+    if (!ctx) { banner.style.display = 'none'; return; }
+
+    banner.style.display = 'flex';
+    this._refreshTask();
+  },
+
+  _hideTask() {
+    const banner = document.getElementById('task-banner');
+    if (banner) banner.style.display = 'none';
+  },
+
+  _refreshTask() {
+    const ctx = this._taskCtx;
+    if (!ctx || this._taskDone) return;
+
+    const wpm  = SE.wpm(), acc = SE.acc(), chars = this._totalChars + this.pos;
+    let label  = '', pct = 0;
+
+    if (ctx.type === 'daily') {
+      const t = ctx.dailyTask.task;
+      label = `📅 ${t.label}`;
+      pct   = DailyTask.calcProgress(ctx.dailyTask, wpm, acc, chars);
+
+      if (DailyTask.isComplete(ctx.dailyTask, wpm, acc, chars)) {
+        ctx.dailyTask.completed = true; ctx.dailyTask.progress = 100;
+        DailyTask.save(ctx.dailyTask);
+        this._completeTask('🎉 Ежедневное задание выполнено!');
+        return;
+      }
+      /* save intermediate progress */
+      ctx.dailyTask.progress = pct;
+      DailyTask.save(ctx.dailyTask);
+
+    } else if (ctx.type === 'program') {
+      const d = ctx.day;
+      label   = `🎓 День ${ctx.dayNum}: ${d.title}`;
+      const wpmP  = Math.min(1, wpm / d.targetWPM);
+      const charP = Math.min(1, chars / d.targetChars);
+      pct = Math.round((wpmP + charP) / 2 * 100);
+
+      if (wpm >= d.targetWPM && acc >= d.targetAcc && chars >= d.targetChars) {
+        Program30.saveDay(ctx.dayNum, { success: true, wpm, acc, chars });
+        this._completeTask(`🏆 День ${ctx.dayNum} пройден! ${wpm} зн/мин, ${acc}%`);
+        return;
+      }
+    }
+
+    const labelEl = document.getElementById('task-label');
+    const fillEl  = document.getElementById('task-bar-fill');
+    const pctEl   = document.getElementById('task-pct');
+    if (labelEl) labelEl.textContent = label;
+    if (fillEl)  fillEl.style.width  = pct + '%';
+    if (pctEl)   pctEl.textContent   = pct + '%';
+  },
+
+  _completeTask(msg) {
+    this._taskDone = true;
+    const labelEl = document.getElementById('task-label');
+    const fillEl  = document.getElementById('task-bar-fill');
+    const pctEl   = document.getElementById('task-pct');
+    const banner  = document.getElementById('task-banner');
+    if (labelEl) labelEl.textContent = msg;
+    if (fillEl)  fillEl.style.width  = '100%';
+    if (pctEl)   pctEl.textContent   = '100%';
+    if (banner)  banner.classList.add('task-complete');
   },
 
   /* ── Key handler ── */
@@ -168,16 +253,11 @@ const Trainer = {
   _key(e) {
     if (App.cur !== 'trainer') return;
 
-    /* Tab = restart */
     if (e.key === 'Tab') { e.preventDefault(); this.restart(); return; }
 
-    /* Backspace = step back */
     if (e.key === 'Backspace') {
       e.preventDefault();
-      if (this.pos > 0) {
-        this.pos--;
-        delete this.errors[this.pos]; /* un-mark error at stepped-back position */
-      }
+      if (this.pos > 0) { this.pos--; delete this.errors[this.pos]; }
       this._render();
       VK.clearAll();
       VK.showNext(this.text[this.pos]);
@@ -205,10 +285,7 @@ const Trainer = {
 
     this.pos++;
 
-    if (this.pos >= this.text.length) {
-      this.nextLine();
-      return;
-    }
+    if (this.pos >= this.text.length) { this.nextLine(); return; }
 
     VK.clearAll();
     VK.showNext(this.text[this.pos]);
@@ -219,15 +296,19 @@ const Trainer = {
   /* ── Controls ── */
 
   restart() {
-    this._gen();
-    this._render();
+    this._totalChars = 0;
+    this._taskDone   = false;
+    const banner = document.getElementById('task-banner');
+    if (banner) banner.classList.remove('task-complete');
+    this._gen(); this._render();
+    if (this._taskCtx) this._initTask();
   },
 
   nextLine() {
-    SE.endSess();
-    SE.startSess();
-    this._gen();
-    this._render();
+    this._totalChars += this.pos;
+    SE.endSess(); SE.startSess();
+    this._gen(); this._render();
+    this._refreshTask();
   },
 
   toggleAdaptive() {

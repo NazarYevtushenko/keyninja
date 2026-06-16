@@ -30,6 +30,17 @@
         <div class="mc-title">Тренажёр</div>
         <div class="mc-desc">Классический режим с адаптивными текстами</div>
       </div>
+      <div class="mode-card mode-card-daily" onclick="App.go('daily')">
+        <div class="ic">📅</div>
+        <div class="mc-title">Ежедневное</div>
+        <div class="mc-desc">Задание на сегодня</div>
+        <div id="home-daily-badge" class="home-badge" style="display:none"></div>
+      </div>
+      <div class="mode-card mode-card-program" onclick="App.go('program')">
+        <div class="ic">🎓</div>
+        <div class="mc-title">30 Дней</div>
+        <div class="mc-desc">Курс прокачки с нуля до уровня Pro</div>
+      </div>
       <div class="mode-card" onclick="App.go('fw')">
         <div class="ic">🌧️</div>
         <div class="mc-title">Падающие слова</div>
@@ -73,6 +84,15 @@
       <div class="stat">Серия: <span class="stat-v" id="t-streak">0</span></div>
       <div class="stat" id="t-focus-row" style="display:none">
         Фокус: <span class="stat-v focus-val" id="t-focus"></span>
+      </div>
+    </div>
+
+    <!-- Task banner (daily / program day) -->
+    <div id="task-banner" style="display:none">
+      <span id="task-label"></span>
+      <div id="task-progress-wrap">
+        <div id="task-bar"><div id="task-bar-fill"></div></div>
+        <span id="task-pct">0%</span>
       </div>
     </div>
 
@@ -178,6 +198,25 @@
     </div>
   </div>
 
+  <!-- ══ DAILY TASK ══ -->
+  <div class="screen" id="s-daily">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="screen-title">📅 Ежедневное задание</div>
+    <div id="daily-card-wrap"></div>
+  </div>
+
+  <!-- ══ 30-DAY PROGRAM ══ -->
+  <div class="screen" id="s-program">
+    <button class="btn back" onclick="App.go('home')">← Назад</button>
+    <div class="screen-title">🎓 30-дневный курс</div>
+    <div id="prog-header" class="prog-header">
+      <div class="prog-stat"><span id="prog-done">0</span> <span class="prog-sl">/ 30 дней</span></div>
+      <div class="prog-bar-wrap"><div id="prog-bar"><div id="prog-bar-fill"></div></div></div>
+      <div class="prog-pct" id="prog-pct">0%</div>
+    </div>
+    <div id="days-grid" class="days-grid"></div>
+  </div>
+
   <!-- ══ STATS ══ -->
   <div class="screen" id="s-stats">
     <button class="btn back" onclick="App.go('home')">← Назад</button>
@@ -196,6 +235,7 @@
 <script src="js/engine.js"></script>
 <script src="js/trainer.js"></script>
 <script src="js/games.js"></script>
+<script src="js/program.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
